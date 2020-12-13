@@ -13,9 +13,9 @@ def get_superpixel(sup_image, segment_val):
                 if sup_image[i,j] == segment_val:
                     x.append(j)
                     y.append(i)
-        return min(y), min(x), max(y), max(x)
+        return min(y), min(x), max(y)-min(y), max(x)-min(x)
     else:
-        return -1, -1, -1, -1
+        return -1, -1, 0, 0
 
 def get_majority_class(seg_gt, bbox, seg_label_list):
     # bbox : [h_start, w_start, h_end, w_end]
@@ -23,11 +23,11 @@ def get_majority_class(seg_gt, bbox, seg_label_list):
     for s in seg_label_list:
         temp = {'id':s['id'], 'name':s['name'], 'rgb':np.array(s['rgb_values']), 'count':0}
         counter.append(temp) 
-    h_start, w_start, h_end, w_end = bbox
-    seg_patch = seg_gt[h_start:h_end, w_start:w_end]
-    h, w, _ = seg_patch.shape
-    for i in range(h):
-        for j in range(w):
+    h_start, w_start, h, w = bbox
+    seg_patch = seg_gt[h_start:h_start+h, w_start:w_start+w]
+    h_, w_, _ = seg_patch.shape
+    for i in range(h_):
+        for j in range(w_):
             for c in counter:
                 if (c['rgb'] == seg_patch[i,j]).all():
                     c['count'] += 1
@@ -70,8 +70,8 @@ for image_number in range(len(image_names)):
     print("Running image " + str(image_number))
     for pixel in range(256):
         bbox = get_superpixel(slic_image, pixel)
-        h1, w1, h2, w2 = bbox
-        if h1!=-1:
+        h1, w1, h, w = bbox
+        if w>=32 and h>=32:
             # color = (255, 0, 0) 
             # thickness = 2
             class_id = get_majority_class(gt_image, bbox, SEG_LABELS_LIST_v1)

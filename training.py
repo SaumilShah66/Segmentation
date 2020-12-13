@@ -13,6 +13,7 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 import torchvision.models as models
+from collections import OrderedDict
 
 class SegmentationData(data.Dataset):
     def __init__(self, file_name="Data.csv"):
@@ -101,15 +102,18 @@ class Trans(object):
         return self.tensor(self.norm(self.flip(sample)))
 
 # Model definition
-class SegmentationNN(nn.Module):
-    def __init__(self):
-        resnet18 = models.resnet18(pretrained=True)
-        pass
-        
-    def forward(self):
-        pass
+def give_vgg():
+    vgg = models.vgg16(pretrained=True)
+    fc = nn.Sequential(OrderedDict([
+                        ('fc1', nn.Linear(512*7*7,1000)),
+                        ('relu', nn.ReLU()),
+                        ('fc2', nn.Linear(1000,10)),
+                        ('output', nn.LogSoftmax(dim=1))
+                    ]))
+    vgg.classifier = fc
+    return vgg
 
-if __name__=="__main__":
+def main():
     mean=[0.485, 0.456, 0.406]
     std=[0.229, 0.224, 0.225]
 
@@ -133,5 +137,9 @@ if __name__=="__main__":
         if i == 3:
             plt.show()
             break
+
+if __name__=="__main__":
+    # main()
+    restry()
         
         

@@ -59,7 +59,8 @@ def get_images(image_name, gt_name):
 
 image_names = glob.glob("MSRC_ObjCategImageDatabase_v1/*_s.bmp")
 gt_names = glob.glob("MSRC_ObjCategImageDatabase_v1/*_s_GT.bmp")
-
+image_names.sort()
+gt_names.sort()
 # CSV
 # input image name , bbox , gt_val - class
 data_file = open("Data.csv",'w')

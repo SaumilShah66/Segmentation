@@ -127,6 +127,8 @@ def give_batch(batch_size, batch_number, dataloader, scale, data_transform):
 
 def train(dataloader, scale, data_transform, batch_size):
     vgg = give_vgg()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    vgg.to(device)
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(vgg.parameters(), lr=0.001)
     total_batches = len(dataloader)//batch_size
@@ -134,6 +136,8 @@ def train(dataloader, scale, data_transform, batch_size):
         running_loss = 0.0
         for batch_number in range(total_batches):
             inputs, labels = give_batch(batch_size, batch_number, dataloader, scale, data_transform) 
+            inputs.to(device)
+            labels.to(device)
             outputs = vgg(inputs)
             loss = criterion(outputs , labels)
             loss.backward()

@@ -127,8 +127,8 @@ def give_batch(batch_size, batch_number, dataloader, scale, data_transform):
 
 def train(dataloader, scale, data_transform, batch_size):
     vgg = give_vgg()
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = nn.L1Loss()
+    optimizer = torch.optim.Adam(vgg.parameters(), lr=0.001)
     total_batches = len(dataloader)//batch_size
     for epoch in range(2):  
         running_loss = 0.0
@@ -140,9 +140,9 @@ def train(dataloader, scale, data_transform, batch_size):
             optimizer.step()
             optimizer.zero_grad()
             running_loss += loss.item()
-            if i % 2000 == 1999:    # print every 2000 mini-batches
+            if batch_number % 20 == 19:    # print every 20 mini-batches
                 print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, running_loss / 2000))
+                    (epoch + 1, batch_number + 1, running_loss / 2000))
                 running_loss = 0.0
     print('Finished Training')
 

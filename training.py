@@ -2,18 +2,20 @@ import os
 import numpy as np
 import torch
 import torch.utils.data as data
-from PIL import Image
+# from PIL import Image
 import random
 import matplotlib.pyplot as plt
 import cv2
 import torchvision.transforms as transforms
 from skimage import io, transform
-import _pickle as pickle
+# import _pickle as pickle
 import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 import torchvision.models as models
 from collections import OrderedDict
+import torch.optim as optim
+
 
 class SegmentationData(data.Dataset):
     def __init__(self, file_name="Data.csv"):
@@ -32,11 +34,11 @@ class SegmentationData(data.Dataset):
         image_name = data[0]
         x, y = int(data[1]), int(data[2])
         h, w = int(data[3]), int(data[4])
-        image = cv2.imread(image_name)
+        image = cv2.imread(image_name).astype(np.float32)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         patch = image[x:h+x, y:w+y, :]/255.0
         id_class = int(data[5]) + 1
-        id_ = np.zeros(10, dtype=np.float)
+        id_ = np.zeros(10, dtype=np.float32)
         id_[id_class] = 1
         sample = {'image': patch, 'id': id_}
         return sample
@@ -87,8 +89,8 @@ class Normaliza(object):
         self.std = std
     def __call__(self, sample):
         img = sample['image']
-        img -= mean
-        img /= std
+        img -= self.mean
+        img /= self.std
         sample['image'] = img
         return sample
 
@@ -113,6 +115,37 @@ def give_vgg():
     vgg.classifier = fc
     return vgg
 
+def give_batch(batch_size, batch_number, dataloader, scale, data_transform):
+    batch_inputs = []
+    batch_outputs = []
+    for i in range(batch_size):
+        sample = dataloader[batch_number*batch_size + i]
+        data = data_transform(scale(sample))
+        batch_inputs.append(data['image'])
+        batch_outputs.append(data['id'])
+    return torch.stack(batch_inputs), torch.stack(batch_outputs)
+
+def train(dataloader, scale, data_transform, batch_size):
+    vgg = give_vgg()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    total_batches = len(dataloader)//batch_size
+    for epoch in range(2):  
+        running_loss = 0.0
+        for batch_number in range(total_batches):
+            inputs, labels = give_batch(batch_size, batch_number, dataloader, scale, data_transform) 
+            outputs = vgg(inputs)
+            loss = criterion(outputs , labels)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            running_loss += loss.item()
+            if i % 2000 == 1999:    # print every 2000 mini-batches
+                print('[%d, %5d] loss: %.3f' %
+                    (epoch + 1, i + 1, running_loss / 2000))
+                running_loss = 0.0
+    print('Finished Training')
+
 def main():
     mean=[0.485, 0.456, 0.406]
     std=[0.229, 0.224, 0.225]
@@ -122,7 +155,9 @@ def main():
     scale = Rescale(32)
     dataloader = SegmentationData(file_name="Data.csv")
     
+    train(dataloader, scale, data_transform, 32)
     fig = plt.figure()
+
     for i in range(4):
         sample = scale(dataloader[i])
         new = {'image':sample['image'].copy(), 'id':sample['id'].copy()}
@@ -137,9 +172,16 @@ def main():
         if i == 3:
             plt.show()
             break
+    pass
+
+def trial():
+    vgg = give_vgg()
+    a = torch.ones([1,3,32,32])
+    print(a.dtype)
+    vgg(a)
+    return
 
 if __name__=="__main__":
-    # main()
-    restry()
-        
+    main()
+    # trial()  
         
